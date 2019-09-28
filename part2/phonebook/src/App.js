@@ -1,18 +1,27 @@
-import React, { useMemo, useRef, useState } from "react";
+import axios from "axios";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Filter from "./components/Filter";
 import PersonForm from "./components/PersonForm";
 import Persons from "./components/Persons";
 
 const App = () => {
-  const [persons, setPersons] = useState([
-    { name: "Arto Hellas", number: "040-123456" },
-    { name: "Ada Lovelace", number: "39-44-5323523" },
-    { name: "Dan Abramov", number: "12-43-234345" },
-    { name: "Mary Poppendieck", number: "39-23-6423122" }
-  ]);
+  const [persons, setPersons] = useState([]);
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
   const [filter, setFilter] = useState("");
+
+  const SERVER_URL = "http://localhost:3001";
+
+  useEffect(() => {
+    axios
+      .get(`${SERVER_URL}/persons`)
+      .then(response => {
+        setPersons(response.data);
+      })
+      .catch(error => {
+        console.log(error);
+      });
+  }, []);
 
   const nameInputEl = useRef(null);
 
@@ -30,10 +39,14 @@ const App = () => {
         name: newName,
         number: newNumber
       };
-      setPersons([...persons, newPerson]);
-      setNewName("");
-      setNewNumber("");
-      nameInputEl.current.focus();
+      axios.post(`${SERVER_URL}/persons`, newPerson).then(response => {
+        console.log(response);
+        const savedPerson = { ...newPerson, id: response.data.id };
+        setPersons([...persons, savedPerson]);
+        setNewName("");
+        setNewNumber("");
+        nameInputEl.current.focus();
+      });
     }
   };
 

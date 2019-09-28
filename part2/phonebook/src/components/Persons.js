@@ -4,7 +4,7 @@ export default ({ list }) => (
   <ul style={{ listStyle: "none", padding: 0 }}>
     {list
       ? list.map(person => (
-          <li key={person.name}>
+          <li key={person.id}>
             {person.name} {person.number}
           </li>
         ))
