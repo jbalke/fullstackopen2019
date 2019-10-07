@@ -1,5 +1,5 @@
 .notification {
-  box-shadow: none;
+  box-shadow: 4px 4px 5px 0px rgba(50, 50, 50, 0.5);
   text-align: center;
   color: white;
   font-size: 1.5rem;
@@ -11,19 +11,16 @@
 }
 
 .error {
-  box-shadow: 4px 4px 5px 0px rgba(50, 50, 50, 0.5);
   background-color: red;
   opacity: 100;
   transition: opacity 500ms;
 }
 .success {
-  box-shadow: 4px 4px 5px 0px rgba(50, 50, 50, 0.5);
   background-color: green;
   opacity: 100;
   transition: opacity 500ms;
 }
 .info {
-  box-shadow: 4px 4px 5px 0px rgba(50, 50, 50, 0.5);
   background-color: skyblue;
   opacity: 100;
   transition: opacity 500ms;
