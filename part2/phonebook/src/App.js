@@ -1,8 +1,8 @@
-import axios from "axios";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Filter from "./components/Filter";
 import PersonForm from "./components/PersonForm";
 import Persons from "./components/Persons";
+import phonebook from "./services/phonebook";
 
 const App = () => {
   const [persons, setPersons] = useState([]);
@@ -10,13 +10,11 @@ const App = () => {
   const [newNumber, setNewNumber] = useState("");
   const [filter, setFilter] = useState("");
 
-  const SERVER_URL = "http://localhost:3001";
-
   useEffect(() => {
-    axios
-      .get(`${SERVER_URL}/persons`)
-      .then(response => {
-        setPersons(response.data);
+    phonebook
+      .getAll()
+      .then(initialEntries => {
+        setPersons(initialEntries);
       })
       .catch(error => {
         console.log(error);
@@ -25,27 +23,49 @@ const App = () => {
 
   const nameInputEl = useRef(null);
 
+  const clearForm = () => {
+    setNewNumber("");
+    setNewName("");
+    nameInputEl.current.focus();
+  };
+
   const addPerson = e => {
     e.preventDefault();
-    if (
-      persons.some(
-        person =>
-          person.name.trim().toLowerCase() === newName.trim().toLowerCase()
-      )
-    ) {
-      alert(`${newName} is already in the phonebook`);
+    let existingPerson = persons.find(
+      person => person.name.toLowerCase() === newName.toLowerCase()
+    );
+    if (existingPerson) {
+      let updatePerson = window.confirm(
+        `${existingPerson.name} is already in the phonebook, replace the old number with the new one?`
+      );
+      if (updatePerson) {
+        phonebook
+          .update(existingPerson.id, {
+            name: existingPerson.name,
+            number: newNumber
+          })
+          .then(() => {
+            let updatedPersons = persons.map(person =>
+              person.id === existingPerson.id
+                ? { ...existingPerson, number: newNumber }
+                : person
+            );
+            setPersons(updatedPersons);
+            clearForm();
+          })
+          .catch(error => {
+            console.log(error);
+          });
+      }
     } else {
       const newPerson = {
         name: newName,
         number: newNumber
       };
-      axios.post(`${SERVER_URL}/persons`, newPerson).then(response => {
-        console.log(response);
-        const savedPerson = { ...newPerson, id: response.data.id };
-        setPersons([...persons, savedPerson]);
-        setNewName("");
-        setNewNumber("");
-        nameInputEl.current.focus();
+      phonebook.create(newPerson).then(persistedPerson => {
+        const p = { ...newPerson, id: persistedPerson.id };
+        setPersons([...persons, p]);
+        clearForm();
       });
     }
   };
@@ -60,6 +80,22 @@ const App = () => {
 
   const handleFilterChange = e => {
     setFilter(e.target.value);
+  };
+
+  const handlePersonDeletion = id => () => {
+    let personToDelete = persons.find(p => p.id === id);
+    let deletePerson = window.confirm(`Delete ${personToDelete.name}?`);
+    if (deletePerson) {
+      phonebook
+        .remove(id)
+        .then(() => {
+          setPersons(persons.filter(person => person.id !== id));
+        })
+        .catch(error => {
+          alert(`Entry #${id} does not exist.`);
+          setPersons(persons.filter(p => p.id !== id));
+        });
+    }
   };
 
   // useMemo not necessary in this case but wanted to avoid filtering on each render
@@ -87,7 +123,7 @@ const App = () => {
         handleNumberChange={handleNumberChange}
       />
       <h3>Numbers</h3>
-      <Persons list={listToShow} />
+      <Persons list={listToShow} deleteHandler={handlePersonDeletion} />
     </div>
   );
 };

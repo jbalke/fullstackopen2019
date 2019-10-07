@@ -1,6 +1,6 @@
 import React from "react";
 
-export default ({
+const PersonForm = ({
   onSubmit,
   nameRef,
   name,
@@ -20,3 +20,5 @@ export default ({
     </div>
   </form>
 );
+
+export default PersonForm;
