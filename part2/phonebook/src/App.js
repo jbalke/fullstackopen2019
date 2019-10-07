@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Filter from "./components/Filter";
+import Notification from "./components/notification";
 import PersonForm from "./components/PersonForm";
 import Persons from "./components/Persons";
 import phonebook from "./services/phonebook";
@@ -9,6 +10,7 @@ const App = () => {
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
   const [filter, setFilter] = useState("");
+  const [notification, setNotification] = useState(null);
 
   useEffect(() => {
     phonebook
@@ -29,10 +31,21 @@ const App = () => {
     nameInputEl.current.focus();
   };
 
+  const showNotification = ({ level = "info", message = "" }) => {
+    setNotification({
+      level,
+      message
+    });
+    setTimeout(() => {
+      setNotification(null);
+    }, 3000);
+  };
+
   const addPerson = e => {
     e.preventDefault();
     let existingPerson = persons.find(
-      person => person.name.toLowerCase() === newName.toLowerCase()
+      person =>
+        person.name.trim().toLowerCase() === newName.trim().toLowerCase()
     );
     if (existingPerson) {
       let updatePerson = window.confirm(
@@ -52,19 +65,34 @@ const App = () => {
             );
             setPersons(updatedPersons);
             clearForm();
+            setNotification({
+              level: "success",
+              message: `${existingPerson.name} has been updated!`
+            });
+            setTimeout(() => {
+              setNotification(null);
+            }, 3000);
           })
           .catch(error => {
-            console.log(error);
+            showNotification({
+              level: "error",
+              message: "This person has been removed from the server."
+            });
+            setPersons(persons.filter(p => p.id !== existingPerson.id));
           });
       }
     } else {
       const newPerson = {
-        name: newName,
-        number: newNumber
+        name: newName.trim(),
+        number: newNumber.trim()
       };
       phonebook.create(newPerson).then(persistedPerson => {
         const p = { ...newPerson, id: persistedPerson.id };
         setPersons([...persons, p]);
+        showNotification({
+          level: "success",
+          message: `${newPerson.name} has been added!`
+        });
         clearForm();
       });
     }
@@ -90,10 +118,17 @@ const App = () => {
         .remove(id)
         .then(() => {
           setPersons(persons.filter(person => person.id !== id));
+          showNotification({
+            level: "success",
+            message: `${personToDelete.name} removed!`
+          });
         })
         .catch(error => {
-          alert(`Entry #${id} does not exist.`);
           setPersons(persons.filter(p => p.id !== id));
+          showNotification({
+            level: "error",
+            message: "This person had already been removed from the server."
+          });
         });
     }
   };
@@ -111,9 +146,10 @@ const App = () => {
 
   return (
     <div>
-      <h2>Phonebook</h2>
+      <h1>Phonebook</h1>
+      <Notification alert={notification} />
       <Filter value={filter} onChange={handleFilterChange} />
-      <h3>add a new</h3>
+      <h2>add a new</h2>
       <PersonForm
         onSubmit={addPerson}
         nameRef={nameInputEl}
@@ -122,7 +158,7 @@ const App = () => {
         number={newNumber}
         handleNumberChange={handleNumberChange}
       />
-      <h3>Numbers</h3>
+      <h2>Numbers</h2>
       <Persons list={listToShow} deleteHandler={handlePersonDeletion} />
     </div>
   );
